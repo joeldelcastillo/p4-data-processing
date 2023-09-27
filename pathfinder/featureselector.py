@@ -17,6 +17,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import f_classif
+from sklearn.preprocessing import MinMaxScaler
 from pathfinder.ant import Ant
 np.set_printoptions(threshold=sys.maxsize)
 
@@ -73,15 +74,25 @@ class FeatureSelector:
             del dic_class_training
 
         elif dtype=="csv":
-            ## TO IMPROVE: here we have to normalize the dataset
+            ## TO DO: here we have to normalize the dataset
             df = pd.read_csv(data_training_name)
-            df = df.to_numpy() 
+            
+            # Normalize
+            scaler = MinMaxScaler()
+            scaler.fit(df)
+            scaled = scaler.fit_transform(df)
+            scaled_df = pd.DataFrame(scaled, columns=df.columns)
+            
+            print(scaled_df.head())
+            df = scaled_df.to_numpy()
+
+            # df = df.to_numpy() 
             classes = df[:, -1].astype(int)
             df = np.delete(df, -1, 1)
             self.data_training, self.data_testing, self.class_training, self.class_testing = train_test_split(df, classes, random_state=42)
 
 
-        print("Samples x features:", np.shape(self.dataset))
+        # print("Samples x features:", np.shape(self.dataset))
 
         scaler = StandardScaler().fit(self.data_training)
         self.data_training = scaler.transform(self.data_training)
@@ -121,6 +132,7 @@ class FeatureSelector:
         # TO DO: I want to know what is this FS
         print('fs - Best Features? : ', fs)       
         fs.fit(self.data_training, self.class_training)
+        print(self.class_training)
         self.LUT = fs.scores_
         sum = np.sum(self.LUT)
         
