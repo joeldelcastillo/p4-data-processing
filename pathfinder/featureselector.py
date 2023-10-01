@@ -364,4 +364,5 @@ class FeatureSelector:
             predicted_probabilities = knn.predict_proba(
                 data_testing_subset)[:, 1]
             auc = roc_auc_score(self.class_testing, predicted_probabilities)
-            print(f"AUC Score {i[0]}:", auc)
+            subset = sorted(i[0])
+            print(f"AUC Score {subset}:", auc)
