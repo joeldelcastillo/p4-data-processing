@@ -12,7 +12,7 @@ start_time = time.time()
 
 # ACO CALL
 fs = ABACOFeatureSelector(dtype='csv', data_training_name='./rtfDataSet.csv',
-                          numberAnts=5, iterations=5, n_features=5)
+                          numberAnts=30, iterations=10, n_features=17)
 
 fs.acoFS()
 
