@@ -251,13 +251,13 @@ class FeatureSelector:
         self.defineLUT()
         for c in range(self.iterations):
             self.resetInitialValues()
-            #print("Colony", c, ":")
+            print("Colony", c, ":")
             ia = 0
             for ia in range(self.number_ants):
                 self.antBuildSubset(ia)
-                #print("\tAnt", ia, ":")
-                #print("\t\tPath:" ,self.ants[ia].feature_path)
-                #print("\t\tCV-Acuraccy:", self.ant_accuracy[ia])
+                print("\tAnt", ia, ":")
+                print("\t\tPath:" ,self.ants[ia].feature_path)
+                print("\t\tCV-Acuraccy:", self.ant_accuracy[ia])
             self.updatePheromones()
             #print("\t\tPheromones:", self.feature_pheromone)
 

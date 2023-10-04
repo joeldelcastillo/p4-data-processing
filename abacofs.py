@@ -59,9 +59,9 @@ class ABACOFeatureSelector(FeatureSelector):
 
         # print("Samples x features:", np.shape(self.dataset))
 
-        # # scaler = StandardScaler().fit(self.data_training)
-        # self.data_training = scaler.transform(self.data_training)
-        # self.data_testing = scaler.transform(self.data_testing)
+        scaler = StandardScaler().fit(self.data_training)
+        self.data_training = scaler.transform(self.data_training)
+        self.data_testing = scaler.transform(self.data_testing)
 
         self.number_ants = numberAnts
         self.ants = [Ant() for _ in range(self.number_ants)]
@@ -89,7 +89,6 @@ class ABACOFeatureSelector(FeatureSelector):
         self.time_pheromonesupdate = 0
 
         self.all_subsets = []
-
         self.subset_percapita = []
         self.last_colony = []
 
@@ -111,91 +110,6 @@ class ABACOFeatureSelector(FeatureSelector):
 
         time_LUT_stop = time.time()
         self.time_LUT = self.time_LUT + (time_LUT_stop - time_LUT_start)
-
-    def resetInitialValues(self):
-        """Initialize the ant array and assign each one a random initial feature.
-        """
-        time_reset_start = time.time()
-
-        self.ants = [Ant() for _ in range(self.number_ants)]
-        initialFeaturesValues = np.arange(self.number_features)
-        for i in range(self.number_ants):
-            rand = np.random.choice(initialFeaturesValues, 1, p=self.LUT)[0]
-            self.ants[i].feature_path.append(rand)
-            actual_features_list = self.ants[i].feature_path
-            actual_subset = np.array(
-                self.data_training[:, actual_features_list])
-            actual_classifier = KNeighborsClassifier()
-            actual_classifier.fit(actual_subset, self.class_training)
-            scores = cross_val_score(
-                actual_classifier, actual_subset, self.class_training, cv=5)
-            actual_accuracy = scores.mean()
-            np.put(self.ant_accuracy, i, actual_accuracy)
-
-        time_reset_stop = time.time()
-        self.time_reset = self.time_reset + \
-            (time_reset_stop - time_reset_start)
-
-    def antBuildSubset(self, index_ant):
-        """Global and local search for the ACO algorithm. It completes the subset of features of the ant searching.
-
-        :param index_ant: Ant that is going to do the local search.
-        :type index_ant: Integer
-        """
-        time_localsearch_start = time.time()
-
-        # Initialize unvisited features and it removes the first of the ant actual subset
-        self.unvisited_features = np.arange(self.number_features)
-        indexes = np.where(np.in1d(self.unvisited_features,
-                           self.ants[index_ant].feature_path))[0]
-        self.unvisited_features = np.delete(self.unvisited_features, indexes)
-        self.defineLUT()
-
-        n = 1
-        while n < self.n_features:
-            # Initialize parameters
-            p = np.zeros(np.size(self.unvisited_features))
-            p_num = np.zeros(np.size(self.unvisited_features))
-
-            # Compute eta, tau and the numerator for each unvisited feature
-            for index_uf in range(len(self.unvisited_features)):
-                eta = self.LUT[self.unvisited_features[index_uf]]
-                tau = self.feature_pheromone[index_uf]
-                np.put(p_num, index_uf, (tau**self.alpha) * (eta**self.beta))
-
-            den = np.sum(p_num)
-            for index_uf in range(len(self.unvisited_features)):
-                p[index_uf] = p_num[index_uf] / den
-            next_feature = np.random.choice(self.unvisited_features, 1, p=p)[0]
-
-            if (n == self.n_features-1):
-                new_features_list = np.array(self.ants[index_ant].feature_path)
-                new_features_list = np.append(new_features_list, next_feature)
-                new_subset = np.array(self.data_training[:, new_features_list])
-                new_classifier = KNeighborsClassifier()
-                new_classifier.fit(new_subset, self.class_training)
-                scores = cross_val_score(
-                    new_classifier, new_subset, self.class_training, cv=5)
-                new_accuracy = scores.mean()
-
-            # Choose the feature with best probability and add to the ant subset
-            self.ants[index_ant].feature_path.append(next_feature)
-            # Remove the chosen feature of the unvisited features
-            self.unvisited_features = np.delete(
-                self.unvisited_features, np.where(self.unvisited_features == next_feature))
-            if (n == self.n_features-1):
-                np.put(self.ant_accuracy, index_ant, new_accuracy)
-            self.redefineLUT(next_feature)
-            n = n+1
-
-        time_localsearch_stop = time.time()
-        self.time_localsearch = self.time_localsearch + \
-            (time_localsearch_stop - time_localsearch_start)
-
-    def updateSubsets(self, ant_index):
-        actual_path = self.ants[ant_index].feature_path
-        actual_acc = self.ant_accuracy[ant_index]
-        self.all_subsets.append(tuple((actual_path, actual_acc)))
 
     def per_capita(self, feature_subset):
         per_capita_importance = 0
@@ -221,7 +135,6 @@ class ABACOFeatureSelector(FeatureSelector):
             ia = 0
             for ia in range(self.number_ants):
                 self.antBuildSubset(ia)
-                self.updateSubsets(ia)
                 if (c == self.iterations-1):
                     self.save_last_colony_subset(self.ants[ia].feature_path)
                 print("\tAnt", ia, ":")
